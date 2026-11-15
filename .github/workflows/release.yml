@@ -28,7 +28,7 @@ jobs:
         run: |
           want="v$(sed -n 's/^const agentVersion = "\(.*\)"$/\1/p' main.go)"
           test "$want" = "$GITHUB_REF_NAME" || { echo "tag $GITHUB_REF_NAME, but main.go says $want"; exit 1; }
-      - run: go vet ./... && go test ./...
+      - run: go vet ./... && sudo -E env "PATH=$PATH" go test ./...
       - name: Build
         env:
           CGO_ENABLED: "0"
