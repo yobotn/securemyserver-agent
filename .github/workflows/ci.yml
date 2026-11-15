@@ -1,0 +1,23 @@
+name: CI
+
+# The public agent repository (D-087): vet, test and a static build on every push and pull request.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  agent:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go vet ./...
+      - run: go test ./...
+      - name: Static build
+        run: CGO_ENABLED=0 go build ./...

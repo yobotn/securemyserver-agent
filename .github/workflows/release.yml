@@ -1,0 +1,65 @@
+name: Release
+
+# Public agent repository (D-087). Customer binaries for a v* tag (D-055): securemyserver and securemyserver-gate for linux amd64 and arm64, static
+# (CGO_ENABLED=0, -trimpath), SHA256SUMS over them, and SHA256SUMS.minisig. The install prompt verifies exactly these
+# files. The honeypot sensor is never part of a customer release (D-051).
+#
+# Repository secret (Settings > Secrets and variables > Actions), never committed:
+#   MINISIGN_SECRET_KEY  the full contents of a minisign secret key file made with `minisign -G -W` (no password;
+#                        the secret store is what protects it). Keep the .key file offline; its public key (the
+#                        "RW..." line of minisign.pub) goes into the platform's SMS_RELEASE_MINISIGN_KEY and the
+#                        release notes.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: The tag matches the agent version
+        run: |
+          want="v$(sed -n 's/^const agentVersion = "\(.*\)"$/\1/p' main.go)"
+          test "$want" = "$GITHUB_REF_NAME" || { echo "tag $GITHUB_REF_NAME, but main.go says $want"; exit 1; }
+      - run: go vet ./... && go test ./...
+      - name: Build
+        env:
+          CGO_ENABLED: "0"
+        run: |
+          mkdir -p dist
+          for arch in amd64 arm64; do
+            GOOS=linux GOARCH=$arch go build -trimpath -ldflags="-s -w -buildid=" -o dist/securemyserver-linux-$arch .
+            GOOS=linux GOARCH=$arch go build -trimpath -ldflags="-s -w -buildid=" -o dist/securemyserver-gate-linux-$arch ./cmd/securemyserver-gate
+          done
+          cd dist && sha256sum securemyserver-linux-* securemyserver-gate-linux-* > SHA256SUMS && cat SHA256SUMS
+      - name: Sign SHA256SUMS with minisign
+        working-directory: dist
+        env:
+          MINISIGN_SECRET_KEY: ${{ secrets.MINISIGN_SECRET_KEY }}
+        run: |
+          test -n "$MINISIGN_SECRET_KEY" || { echo "MINISIGN_SECRET_KEY is not set"; exit 1; }
+          sudo apt-get update -qq && sudo apt-get install -y -qq minisign
+          umask 077
+          printf '%s\n' "$MINISIGN_SECRET_KEY" > "$RUNNER_TEMP/minisign.key"
+          minisign -S -s "$RUNNER_TEMP/minisign.key" -m SHA256SUMS -t "securemyserver $GITHUB_REF_NAME SHA256SUMS"
+          rm -f "$RUNNER_TEMP/minisign.key"
+          ls -l
+      - name: Attach to the GitHub release
+        working-directory: dist
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          files="securemyserver-linux-amd64 securemyserver-linux-arm64 securemyserver-gate-linux-amd64 securemyserver-gate-linux-arm64 SHA256SUMS SHA256SUMS.minisig"
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" $files --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" $files --verify-tag --title "securemyserver $GITHUB_REF_NAME" \
+              --notes "Verify: minisign -Vm SHA256SUMS -x SHA256SUMS.minisig -P RWQx+6u8bOlqJNGa4Pmh2fmgzY+imJCjE9WDQlpWkNY6T+eZQjoTfDCk, then sha256sum -c --ignore-missing SHA256SUMS"
+          fi
