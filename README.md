@@ -1,9 +1,24 @@
-# securemyserver
+# 🛡️ securemyserver
+
+[![CI](https://github.com/yobotn/securemyserver-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/yobotn/securemyserver-agent/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/yobotn/securemyserver-agent?label=release)](https://github.com/yobotn/securemyserver-agent/releases)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+
+The agent behind [SecureMyServer](https://securemyserver.com): let your AI run your server, safely.
+
+- 👀 **Reads** your server's security state every 5 minutes and sends it up. Data only flows up.
+- ✍️ **Changes** only what you signed with your passkey *and* root allowed on this server, each with a checkpoint
+  and an automatic undo.
+- 🔌 **Never listens** on a port. It only makes outgoing HTTPS requests.
+- 🔏 **Signed releases:** every binary is in a minisign-signed `SHA256SUMS` (see [SECURITY.md](SECURITY.md)).
+- 🐧 Debian and Ubuntu, amd64 and arm64. One static binary.
+
+🐞 Found a security problem? Please read [SECURITY.md](SECURITY.md) and don't open a public issue.
 
 The SecureMyServer binary. One static Linux binary, `securemyserver`. `securemyserver agent` reads the
 state of your server and POSTs a JSON report to `https://ingest.securemyserver.com/v1/report` every 5 minutes.
 
-## Read-only, except switches you sign
+## 🔒 Read-only, except switches you sign
 
 - `securemyserver agent` reads files and runs read-only commands. On its own it does not edit config, install
   packages, touch the firewall, add users or restart services.
@@ -32,7 +47,7 @@ state of your server and POSTs a JSON report to `https://ingest.securemyserver.c
   a session (below), with secret files left out and secret-looking values redacted on the server. It reads a listening program's command line only to name it from a fixed list of databases and
   dev tools (`tools.go`), and never sends it.
 
-## Signed safe switches (the write path)
+## ✍️ Signed safe switches (the write path)
 
 | Switch | What it does | Refused when |
 |---|---|---|
@@ -110,7 +125,7 @@ them with Go's standard library.
 - The firewall switch handles ufw only. Docker-published ports skip ufw rules; the `docker.port.<n>` item flags them
   (below).
 
-## The undo net: checkpoint, confirm, undo
+## ↩️ The undo net: checkpoint, confirm, undo
 
 Fix prompts (on agents 0.2.0 and later) and every switch use the same CLI. All of it is root only.
 
@@ -142,7 +157,7 @@ sudo securemyserver status                            # service, last report, ch
   (`allow --all-safe blocklist` does both). A switch added in a later agent version needs its own allow, or
   `--all-safe` again. `disallow --all-safe` takes them all back.
 
-## The signed blocklist (D-013, D-041, D-042)
+## 🚫 The signed blocklist (D-013, D-041, D-042)
 
 Off until root runs `sudo securemyserver allow blocklist`. Then, after each report, the agent pulls
 `GET /v1/blocklist` (same host as the endpoint; `blocklist_endpoint` overrides it), with `If-None-Match: "<version>"`
@@ -193,7 +208,7 @@ table inet securemyserver {
 - `nft list set inet securemyserver securemyserver_block` shows what is blocked; the dashboard shows "Blocklist on
   this server: N entries, version X, applied 3 min ago" from the `blocklist` report field.
 
-## Signed reports (D-043)
+## 🔏 Signed reports (D-043)
 
 On its first run the agent makes an Ed25519 key, `/var/lib/securemyserver/report_key` (a base64 seed, 0600, root
 only), and signs every request:
@@ -214,7 +229,7 @@ as `X-SMS-Key-Rotation: v1 <old> <new> <unix seconds> <signature by the old key>
 platform over. Reinstalled the server (new key, old one lost)? Use **Forget report key** on the server page; the
 next signed report registers the new key.
 
-## What it reads
+## 👀 What it reads
 
 | What | From |
 |---|---|
@@ -241,7 +256,7 @@ next signed report registers the new key.
 Run `sudo securemyserver agent --once --dry-run` to print the exact report as JSON without sending it, and
 `sudo securemyserver check` to send one now.
 
-## Exposed databases, dev tools, Docker and IPv6 (D-045)
+## 🗄️ Exposed databases, dev tools, Docker and IPv6 (D-045)
 
 From these fields the dashboard raises four kinds of item, each with a Fix with AI prompt:
 
@@ -287,7 +302,7 @@ The known programs (src/lib/report/exposure.ts, ids in `tools.go`):
 The fingerprint is computed like `ssh-keygen -lf`: base64 of the sha256 of the decoded key blob, without
 padding.
 
-### Which login lines are trusted (agent 0.8.0, D-AGENT)
+### 🧾 Which login lines are trusted (agent 0.8.0, D-AGENT)
 
 Login events and key last-used times prefer the systemd journal. The agent asks `journalctl -o json` for lines that
 claim to be sshd's (`SYSLOG_IDENTIFIER` sshd, sshd-session or sshd-auth) or come from `ssh.service`/`sshd.service`,
@@ -305,7 +320,7 @@ file last written before the 90 days. Any user can write such a line with `logge
 `auth_verified: false` and `usage_verified: false`. A forged line can make a key look used, or confirm (keep) a
 switch that is already safer; it cannot unlock anything.
 
-## securemyserver-gate (the AI's forced command)
+## 🚪 securemyserver-gate (the AI's forced command)
 
 `securemyserver-gate` is a second static binary, `/usr/lib/securemyserver/securemyserver-gate` (root:root, 0755). Neither the agent nor the
 platform runs it: **sshd runs it** for every connection made with the `securemyserver-ai` key, because the key line
@@ -396,7 +411,7 @@ that sets all of this up ("Give my AI its own key").
 
 Ask mode (tier 2) is not built yet.
 
-## The checkpoint before the AI's first sudo, the diff, and Undo (D-053)
+## 🤖 The checkpoint before the AI's first sudo, the diff, and Undo (D-053)
 
 The sudoers preset (Keys page, "Give my AI its own key") has one rule for this, and allows only this exact form:
 
@@ -436,7 +451,7 @@ exactly, since a sudoers wildcard would match more than one word).
   the presets stay the boundary. Changes outside the fixed list (a file in /opt, a database) are neither shown nor
   undone. Undo restores config files; it does not uninstall packages or restart services other than ssh.
 
-## Install
+## 📦 Install
 
 The easy way: **Add server** in the dashboard gives you a **Copy prompt** for your AI (Claude Code, Cursor, Codex or
 any chat). It carries this server's one-time enrollment token and does the steps below, showing you each command
@@ -514,7 +529,7 @@ By hand:
 6. `sudo securemyserver check` sends a report now and prints a short summary. `sudo securemyserver status` shows the
    local state at any time, without contacting the platform.
 
-### The one-time enrollment token (D-054)
+### 🎟️ The one-time enrollment token (D-054)
 
 A new server gets an `sms_enroll_` token. It works for **one** report, within **15 minutes** of being made
 (`SMS_ENROLL_TTL_MINUTES` on the platform). That first report must be signed (D-043, agent 0.6.0): it registers this
@@ -531,7 +546,7 @@ leaked token is worthless once the server is enrolled, and an unused one dies af
 - The reply to a report also carries `summary` (open, critical and verified items, switches waiting), which `check`
   prints. Like everything else in the reply except the signed `envelopes`, the agent never acts on it.
 
-## Commands
+## ⌨️ Commands
 
 | Command | What it does |
 |---|---|
@@ -555,7 +570,7 @@ Our honeypot sensor is a separate, private program (end of this file).
 with a deprecation line in the log, when `agent.conf` does not exist. Rename it. The report field `ai_gate` is
 now `gate`; the platform accepts both for one release.
 
-## Agent flags
+## 🚩 Agent flags
 
 | Flag | Default | Meaning |
 |---|---|---|
@@ -566,7 +581,7 @@ now `gate`; the platform accepts both for one release.
 | `--config` | `/etc/securemyserver/agent.conf` (falls back to the old `smsd.conf`) | Config file |
 | `--version` | | Print the version |
 
-## Build and test (Docker, no local Go needed)
+## 🧪 Build and test (Docker, no local Go needed)
 
 From the repository root (Git Bash on Windows needs `MSYS_NO_PATHCONV=1` and `$(pwd -W)`):
 
@@ -611,7 +626,7 @@ docker cp bin/securemyserver-gate sms-systemd:/usr/lib/securemyserver/securemyse
 docker cp test/systemd/journal-trust.sh sms-systemd:/root/ && docker exec sms-systemd sh /root/journal-trust.sh
 ```
 
-## Honeypot sensors
+## 🍯 Honeypot sensors
 
 Our honeypot sensors are a separate program that runs only on a few VPSs SecureMyServer owns. Customers never
 run it, and its source is not published, so attackers can't study how to recognise our sensors.

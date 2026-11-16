@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🔐 Report a security problem
+    url: https://github.com/yobotn/securemyserver-agent/security/advisories/new
+    about: Privately, please. Never in a public issue.
+  - name: 💬 Help with your account or dashboard
+    url: mailto:support@securemyserver.com
+    about: Questions about SecureMyServer itself, not the agent's code.

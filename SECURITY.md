@@ -1,9 +1,9 @@
-# Security policy
+# 🔐 Security policy
 
 This repository is the SecureMyServer agent. It runs as root on customer servers, so we take reports about it
 seriously.
 
-## Report a vulnerability
+## 📨 Report a vulnerability
 
 Email **security@securemyserver.com**, or use GitHub's "Report a vulnerability" button on this repository
 (private advisory). Please include what you found, how to reproduce it, and the agent version
@@ -15,7 +15,7 @@ publish. We'll confirm we received your report, keep you updated, and credit you
 The full policy, including what is in scope and our safe-harbour promise, is at
 <https://securemyserver.com/security>.
 
-## What we especially want to hear about
+## 🎯 What we especially want to hear about
 
 - Any way to make the agent run a command or write a file that isn't one of the signed safe switches, the signed
   blocklist or a passkey-signed session undo.
@@ -24,7 +24,7 @@ The full policy, including what is in scope and our safe-harbour promise, is at
 - Any way for the agent to send secrets, private keys, file contents or shell history upward.
 - Any way to get the agent to listen on a port.
 
-## Verify a release
+## ✅ Verify a release
 
 Every release has `SHA256SUMS` signed with our minisign key:
 

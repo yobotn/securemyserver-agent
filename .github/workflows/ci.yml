@@ -1,4 +1,4 @@
-name: CI
+name: ✅ CI
 
 # The public agent repository (D-087): vet, test and a static build on every push and pull request.
 on:

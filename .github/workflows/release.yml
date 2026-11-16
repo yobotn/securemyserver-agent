@@ -1,4 +1,4 @@
-name: Release
+name: 📦 Release
 
 # Public agent repository (D-087). Customer binaries for a v* tag (D-055): securemyserver and securemyserver-gate for linux amd64 and arm64, static
 # (CGO_ENABLED=0, -trimpath), SHA256SUMS over them, and SHA256SUMS.minisig. The install prompt verifies exactly these
